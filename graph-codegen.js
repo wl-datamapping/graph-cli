@@ -3,7 +3,7 @@
 let app = require('commander')
 let path = require('path')
 let chokidar = require('chokidar');
-const chalk = require('chalk')
+let chalk = require('chalk')
 
 let TypeGenerator = require('./src/cli/type-generator')
 
@@ -22,7 +22,7 @@ app
   )
   .option(
     '-w, --watch',
-    'Setup directory watching to rebuild when file changes are detected')
+    'Rebuild automatically when files change')
   .parse(process.argv)
 
 // Obtain the subgraph manifest file
@@ -76,7 +76,7 @@ if (app.watch) {
         });
       })
 
-  //Catch keyboard interrupt: close watcher and exit process
+  // Catch keyboard interrupt: close watcher and exit process
   process.on('SIGINT', function() {
     watcher.close()
     process.exit()

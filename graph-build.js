@@ -4,7 +4,7 @@ let app = require('commander')
 let path = require('path')
 let ipfsAPI = require('ipfs-api')
 let chokidar = require('chokidar');
-const chalk = require('chalk')
+let chalk = require('chalk')
 
 let Compiler = require('./src/cli/compiler')
 
@@ -23,7 +23,7 @@ app
   )
   .option('-t, --output-format [format]', 'Output format (wasm, wast)', 'wasm')
   .option('i, --ipfs [addr]', 'IPFS node to use for uploading files')
-  .option('-w, --watch', 'Setup directory watching to rebuild when file changes are detected')
+  .option('-w, --watch', 'Rebuild automatically when files change')
 
 app.on('--help', function() {
   console.log('')
@@ -48,7 +48,7 @@ if (file === null || file === undefined) {
 // Connect to the IPFS node (if a node address was provided)
 let ipfs = app.ipfs ? ipfsAPI(app.ipfs) : undefined
 
-let subgraph_generator = new Compiler({
+let compiler = new Compiler({
   ipfs: ipfs,
   subgraphManifest: file,
   outputDir: app.outputDir,
@@ -58,9 +58,10 @@ let subgraph_generator = new Compiler({
 
 // Watch working directory for file updates or additions, trigger compile (if watch argument specified)
 if (app.watch) {
-  subgraph_generator.logger.info('')
-  subgraph_generator.logger.info('%s %s', chalk.grey("Watching:"), process.cwd())
-  // Initialize watchers
+  compiler.logger.info('')
+  compiler.logger.info('%s %s', chalk.grey("Watching:"), process.cwd())
+
+  // Initialize watcher
   let watcher = chokidar.watch('.', {
     persistent: true,
     ignoreInitial: true,
@@ -77,27 +78,27 @@ if (app.watch) {
   // Add event listeners.
   watcher
     .on('ready', function() {
-      subgraph_generator.compile()
+      compiler.compile()
       watcher
         .on('add', path => {
-          subgraph_generator.logger.info(chalk.grey('New file detected, rebuilding subgraph'))
-          subgraph_generator.compile()
-          subgraph_generator.logger.info('')
+          compiler.logger.info(chalk.grey('New file detected, rebuilding subgraph'))
+          compiler.compile()
+          compiler.logger.info('')
         })
         .on('change', path => {
-          subgraph_generator.logger.info(chalk.grey('File change detected, rebuilding subgraph'))
-          subgraph_generator.compile()
-          subgraph_generator.logger.info('')
+          compiler.logger.info(chalk.grey('File change detected, rebuilding subgraph'))
+          compiler.compile()
+          compiler.logger.info('')
       });
-      subgraph_generator.logger.info('')
+      compiler.logger.info('')
   })
 
-  //Catch keyboard interrupt: close watcher and exit process
+  // Catch keyboard interrupt: close watcher and exit process
   process.on('SIGINT', function() {
     watcher.close()
     process.exit()
   })
 } else {
-  subgraph_generator.compile()
+  compiler.compile()
 }
 

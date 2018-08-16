@@ -59,10 +59,10 @@ let compiler = new Compiler({
 // Watch working directory for file updates or additions, trigger compile (if watch argument specified)
 if (app.watch) {
   compiler.logger.info('')
-  compiler.logger.info('%s %s', chalk.grey("Watching:"), process.cwd())
+  compiler.logger.info('%s %s', chalk.grey("Watching:"), compiler.options.subgraphManifest)
 
   // Initialize watcher
-  let watcher = chokidar.watch('.', {
+  let watcher = chokidar.watch(path.resolve(compiler.sourceDir, compiler.options.subgraphManifest), {
     persistent: true,
     ignoreInitial: true,
     ignored: [
@@ -75,18 +75,51 @@ if (app.watch) {
     atomic: 500
   })
 
+  let subgraph = compiler.loadSubgraph()
+
+  compiler.logger.info(chalk.grey('Parse subgraph to setup ze watchers'))
+  compiler.logger.info(chalk.grey('SUBGRAPH: ', subgraph))
+  subgraph.getIn(['schema', 'file'], schemaFile => {
+    compiler.logger.info(chalk.grey('Schemafile: ', schemaFile))
+    let absoluteSourceFile = path.resolve(compiler.sourceDir, schemaFile)
+    compiler.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
+    watcher.add(absoluteSourceFile)
+  })
+
+  subgraph.get('dataSources', dataSources => {
+    dataSources.map(dataSource =>
+      dataSource
+        .getIn(['mapping', 'file'], dataSourceFile => {
+          let absoluteSourceFile = path.resolve(compiler.sourceDir, dataSourceFile)
+          compiler.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
+          watcher.add(absoluteSourceFile)
+        })
+        .getIn(['mapping', 'abis'], abis =>
+          abis.map(abi =>
+            abi.get('file', abiFile => {
+              let absoluteSourceFile = path.resolve(compiler.sourceDir, abiFile)
+              compiler.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
+              watcher.add(absoluteSourceFile)
+            })
+          )
+        )
+    )
+  })
+
   // Add event listeners.
   watcher
     .on('ready', function() {
+      let files = watcher.getWatched()
+      compiler.logger.info(chalk.grey('Files watched: ', files))
       compiler.compile()
       watcher
         .on('add', path => {
-          compiler.logger.info(chalk.grey('New file detected, rebuilding subgraph'))
+          compiler.logger.info(chalk.grey('New file detected: ', path))
           compiler.compile()
           compiler.logger.info('')
         })
         .on('change', path => {
-          compiler.logger.info(chalk.grey('File change detected, rebuilding subgraph'))
+          compiler.logger.info(chalk.grey('File change detected: ', path))
           compiler.compile()
           compiler.logger.info('')
       });
@@ -101,4 +134,3 @@ if (app.watch) {
 } else {
   compiler.compile()
 }
-

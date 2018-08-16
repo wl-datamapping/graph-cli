@@ -43,6 +43,7 @@ class Compiler {
     this.createOutputDirectory()
 
     let compiledSubgraph = this.compileSubgraph(subgraphInBuildDir)
+    this.logger.info(chalk.green('Compiled subgraph'))
     let localSubgraph = this.writeSubgraphToOutputDirectory(compiledSubgraph)
 
     let hashOrFilename =
@@ -64,6 +65,42 @@ class Compiler {
     } catch (e) {
       this.logger.fatal('Failed to load subgraph:', e)
     }
+  }
+
+  getFileNames(subgraph) {
+    try {
+      this.logger.info('Get file locations from subgraph:', this.options.subgraphManifest)
+      let files = []
+      let schemaFile = subgraph.getIn(['schema', 'file'])
+      this.logger.info(chalk.grey('Schemafile: ', schemaFile))
+      let absoluteSourceFile = path.resolve(compiler.sourceDir, schemaFile)
+      this.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
+      files.push(absoluteSourceFile)
+
+      subgraph.get('dataSources', dataSources => {
+        dataSources.map(dataSource =>
+          dataSource
+            .getIn(['mapping', 'file'], dataSourceFile => {
+              let absoluteSourceFile = path.resolve(compiler.sourceDir, dataSourceFile)
+              this.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
+              files.push(absoluteSourceFile)
+            })
+            .getIn(['mapping', 'abis'], abis =>
+              abis.map(abi =>
+                abi.get('file', abiFile => {
+                  let absoluteSourceFile = path.resolve(compiler.sourceDir, abiFile)
+                  this.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
+                  files.push(absoluteSourceFile)
+                })
+              )
+            )
+        )
+      })
+      return files
+    } catch(e) {
+      this.logger.fatal('Failed to parse subgraph file locations:', e)
+    }
+
   }
 
   createBuildDirectory() {

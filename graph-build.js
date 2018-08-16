@@ -79,32 +79,9 @@ if (app.watch) {
 
   compiler.logger.info(chalk.grey('Parse subgraph to setup ze watchers'))
   compiler.logger.info(chalk.grey('SUBGRAPH: ', subgraph))
-  subgraph.getIn(['schema', 'file'], schemaFile => {
-    compiler.logger.info(chalk.grey('Schemafile: ', schemaFile))
-    let absoluteSourceFile = path.resolve(compiler.sourceDir, schemaFile)
-    compiler.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
-    watcher.add(absoluteSourceFile)
-  })
-
-  subgraph.get('dataSources', dataSources => {
-    dataSources.map(dataSource =>
-      dataSource
-        .getIn(['mapping', 'file'], dataSourceFile => {
-          let absoluteSourceFile = path.resolve(compiler.sourceDir, dataSourceFile)
-          compiler.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
-          watcher.add(absoluteSourceFile)
-        })
-        .getIn(['mapping', 'abis'], abis =>
-          abis.map(abi =>
-            abi.get('file', abiFile => {
-              let absoluteSourceFile = path.resolve(compiler.sourceDir, abiFile)
-              compiler.logger.info(chalk.grey('Starting to watch: ', absoluteSourceFile))
-              watcher.add(absoluteSourceFile)
-            })
-          )
-        )
-    )
-  })
+  let fileLocations = compiler.getFileNames(subgraph)
+  compiler.logger.info('%s %s', chalk.grey('Files to be watched: '), fileLocations)
+  // watcher.add(fileLocations)
 
   // Add event listeners.
   watcher

@@ -28,7 +28,11 @@ project. It is recommended to install `graph-cli` as a local dependency
 via `package.json` and use `npm` scripts for code generation and
 building.
 
-An example of this can be found in the [Decentraland repository](https://github.com/graphprotocol/decentraland/).
+If you are just getting started with creating a subgraph, head to [The Getting Started Guide](https://github.com/graphprotocol/graph-node/blob/master/docs/getting-started.md). Eventually that guide will lead you back here.
+
+For clarity, an example of the setup below can be found in the [Ens subgraph repository](https://github.com/graphprotocol/ens-subgraph).
+
+### Steps 
 
 1.  Create a project for the subgraph with a `package.json` etc.
 2.  Add a `subgraph.yaml` subgraph manifest with a GraphQL schema etc.
@@ -75,7 +79,7 @@ An example of this can be found in the [Decentraland repository](https://github.
     ```bash
     yarn codegen
     ```
-7.  Develop your `mapping.ts` against these generated types.
+7.  Develop your `mapping.ts` against these generated types. If you haven't developed your mappings yet, you can head to [The Getting Started Doc](https://github.com/graphprotocol/graph-node/blob/master/docs/getting-started.md#34-write-your-mappings). 
 8.  Build the subgraph with one of
     ```sh
     yarn build      # Will drop the results in dist/

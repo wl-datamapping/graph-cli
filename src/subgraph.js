@@ -202,6 +202,33 @@ ${abiEvents
       }, immutable.List())
   }
 
+  static validateRepository(manifest, { resolveFile }) {
+    let error = immutable.List()
+    if (manifest.get('repository') === 'https://github.com/rodventures/gravity-subgraph') {
+      return error.push(immutable.fromJS({
+          path: ['repository'],
+          message: `\
+  The subgraph manifest is still referencing the example repository at https://github.com/rodventures/gravity-subgraph.
+  Please replace it with your repository location or leave blank if you prefer to keep it private.`,
+        }))
+    } else {
+      return error
+    }
+  }
+
+  static validateDescription(manifest, { resolveFile }) {
+    let error = immutable.List()
+    if (manifest.get('description') === 'Gravatar for Ethereum') {
+      return error.push(immutable.fromJS({
+          path: ['description'],
+          message: `\
+  Example subgraph description remains. Please update to provide a short description of what your subgraph is.`,
+        }))
+    } else {
+      return immutable.List()
+    }
+  }
+
   static load(filename) {
     // Load and validate the manifest
     let data = yaml.safeLoad(fs.readFileSync(filename, 'utf-8'))
@@ -224,7 +251,9 @@ ${abiEvents
     let errors = immutable.List.of(
       ...Subgraph.validateAbis(manifest, { resolveFile }),
       ...Subgraph.validateContractAddresses(manifest),
-      ...Subgraph.validateEvents(manifest, { resolveFile })
+      ...Subgraph.validateEvents(manifest, { resolveFile }),
+      ...Subgraph.validateRepository(manifest, { resolveFile }),
+      ...Subgraph.validateDescription(manifest, { resolveFile })
     )
 
     if (errors.size > 0) {

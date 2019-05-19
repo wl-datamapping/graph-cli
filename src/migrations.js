@@ -1,6 +1,9 @@
 const { withSpinner, step } = require('./command-helpers/spinner')
 
-const MIGRATIONS = [require('./migrations/bump-mapping-api-version')]
+const MIGRATIONS = [
+  require('./migrations/bump-mapping-api-version'),
+  require('./migrations/indexed-event-params'),
+]
 
 const applyMigrations = async options =>
   await withSpinner(
